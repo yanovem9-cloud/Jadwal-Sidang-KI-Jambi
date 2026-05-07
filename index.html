@@ -383,6 +383,152 @@
     gap: 4px;
   }
 
+  /* ── DATE DIVIDER ── */
+  .date-divider {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 4px;
+  }
+
+  .date-divider-line {
+    flex: 1;
+    height: 1.5px;
+    background: var(--border);
+  }
+
+  .date-divider-today .date-divider-line {
+    background: var(--accent-mid);
+    opacity: 0.4;
+  }
+
+  .date-divider-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .date-divider-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+  }
+
+  .date-divider-today .date-divider-text {
+    color: var(--accent);
+  }
+
+  .today-chip {
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .today-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  /* ── CARD DATETIME BANNER ── */
+  .card-datetime-banner {
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 8px;
+  }
+
+  .card-today .card-datetime-banner {
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-mid) 100%);
+  }
+
+  .card-datetime-left, .card-time-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-date-icon, .card-time-icon { font-size: 14px; }
+
+  .card-date-text { opacity: 0.95; }
+  .card-time-text { 
+    background: rgba(255,255,255,0.18); 
+    padding: 2px 8px; 
+    border-radius: 6px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── CARD BADGES ── */
+  .card-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  /* ── STATUS BADGE ── */
+  .status-badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+
+  .status-aktif   { background: #dcfce7; color: #15803d; }
+  .status-selesai { background: #e0e7ff; color: #3730a3; }
+  .status-ditunda { background: #fff7ed; color: #c2410c; }
+
+  /* ── TOGGLE PAST BUTTON ── */
+  .toggle-past-btn {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .toggle-past-btn:hover {
+    border-color: var(--accent-mid);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  /* ── CARD TODAY highlight ── */
+  .card-today {
+    border-color: var(--accent-mid);
+    box-shadow: 0 0 0 2px rgba(46,102,71,0.15), var(--shadow-sm);
+  }
+
   /* ── EMPTY STATE ── */
   .empty-state {
     text-align: center;
@@ -708,6 +854,11 @@
     <button class="tab-btn" onclick="setFilter('Putusan', this)">Putusan</button>
   </div>
 
+  <!-- TOGGLE PAST -->
+  <div style="margin-bottom:20px;">
+    <button id="togglePastBtn" onclick="togglePast()" class="toggle-past-btn" style="display:none">🕘 Tampilkan jadwal yang sudah lewat</button>
+  </div>
+
   <!-- CARD GRID -->
   <div class="card-grid" id="cardGrid"></div>
 
@@ -797,6 +948,16 @@
       </div>
 
       <div class="modal-section">
+        <div class="modal-section-title">Status Perkara</div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label>Status</label>
+            <p id="m-status">–</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section">
         <div class="modal-section-title">Catatan Sidang</div>
         <div class="catatan-box">
           <p id="m-catatan">–</p>
@@ -836,7 +997,8 @@ const COL = {
   mediator : 7,
   panitera : 8,
   agenda   : 9,
-  catatan  : 10
+  catatan  : 10,
+  status   : 11   /* Kolom L — STATUS PERKARA (diisi manual di Sheet) */
 };
 
 /* ════════════════════════════════════════════════════════
@@ -844,6 +1006,7 @@ const COL = {
    ════════════════════════════════════════════════════════ */
 let sidangData   = [];
 let activeFilter = 'all';
+let showPast     = false;   /* false = hanya tampil hari ini ke depan */
 
 /* ════════════════════════════════════════════════════════
    LAYER 1 — FETCH: ambil data dari Google Sheets via CSV publik
@@ -913,6 +1076,7 @@ function transformRows(rows) {
       panitera : (r[COL.panitera] || '').trim(),
       agenda   : (r[COL.agenda]   || '').trim(),
       catatan  : (r[COL.catatan]  || '').trim(),
+      status   : (r[COL.status]   || '').trim(),
     }))
     .filter(d => d.register); /* buang baris kosong */
 }
@@ -921,28 +1085,53 @@ function transformRows(rows) {
    LAYER 3 — RENDER: tampilkan data ke UI
    ════════════════════════════════════════════════════════ */
 
+/* ── Helper: parse string tanggal ke Date object ── */
+const BULAN_ID = {
+  'januari':1,'februari':2,'maret':3,'april':4,'mei':5,'juni':6,
+  'juli':7,'agustus':8,'september':9,'oktober':10,'november':11,'desember':12
+};
+
+function parseTanggal(str) {
+  if (!str) return null;
+  /* Format ISO: 2026-01-05 */
+  const iso = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2])-1, parseInt(iso[3]));
+  /* Format Indonesia: "Senin, 05 Januari 2026" atau "05 Januari 2026" */
+  const id = str.toLowerCase().match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+  if (id) {
+    const bln = BULAN_ID[id[2]];
+    if (bln) return new Date(parseInt(id[3]), bln-1, parseInt(id[1]));
+  }
+  return null;
+}
+
+function todayDate() {
+  const t = new Date();
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+
 /* ── Helper format tanggal ── */
 function formatTanggal(str) {
   if (!str) return '-';
-  /* Coba parse dari string seperti "Senin, 05 Januari 2026" atau "2026-01-05" */
-  const iso = str.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) {
-    const d = new Date(`${iso[0]}T00:00:00`);
-    return d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  }
-  return str; /* kembalikan apa adanya jika sudah dalam format teks */
+  const d = parseTanggal(str);
+  if (d) return d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  return str;
 }
 
-/* ── Nama singkat hari dari string tanggal ── */
+/* ── Nama hari singkat ── */
 function namaHariSingkat(str) {
   if (!str) return '';
-  const iso = str.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) {
-    const d = new Date(`${iso[0]}T00:00:00`);
-    return d.toLocaleDateString('id-ID', { weekday:'long' });
-  }
-  /* Jika sudah berbentuk "Senin, 05 Januari 2026", ambil bagian pertama */
+  const d = parseTanggal(str);
+  if (d) return d.toLocaleDateString('id-ID', { weekday:'long' });
   return str.split(',')[0];
+}
+
+/* ── Format tanggal ringkas untuk kartu: "Senin, 5 Jan 2026" ── */
+function formatTanggalRingkas(str) {
+  if (!str) return '-';
+  const d = parseTanggal(str);
+  if (d) return d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'short', year:'numeric' });
+  return str;
 }
 
 /* ── Badge agenda ── */
@@ -955,51 +1144,110 @@ function agendaBadge(agenda) {
   return `<span class="agenda-badge badge-lanjutan">${agenda || 'Lainnya'}</span>`;
 }
 
+/* ── Badge status perkara ── */
+function statusBadge(status) {
+  if (!status) return '';
+  const s = status.toLowerCase();
+  if (s.includes('selesai') || s.includes('putus'))
+    return `<span class="status-badge status-selesai">✓ ${status}</span>`;
+  if (s.includes('ditunda') || s.includes('tunda'))
+    return `<span class="status-badge status-ditunda">⏸ ${status}</span>`;
+  if (s.includes('aktif') || s.includes('berjalan') || s.includes('proses'))
+    return `<span class="status-badge status-aktif">● ${status}</span>`;
+  return `<span class="status-badge status-aktif">● ${status}</span>`;
+}
+
+/* ── Cek apakah tanggal adalah hari ini ── */
+function isToday(str) {
+  const d = parseTanggal(str);
+  if (!d) return false;
+  const t = todayDate();
+  return d.getTime() === t.getTime();
+}
+
 /* ── Render card grid ── */
 function renderCards(data) {
   const grid = document.getElementById('cardGrid');
   grid.innerHTML = '';
 
   if (data.length === 0) {
+    const q = document.getElementById('searchInput').value.trim();
     grid.innerHTML = `
       <div class="empty-state">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
-        <p>Tidak ada jadwal sidang ditemukan.</p>
+        <p>${q ? 'Tidak ada hasil untuk pencarian tersebut.' : 'Tidak ada jadwal sidang yang akan datang.'}</p>
+        ${!showPast && !q ? '<button onclick="togglePast()" style="margin-top:12px;padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Tampilkan semua termasuk yang sudah lewat</button>' : ''}
       </div>`;
     return;
   }
 
+  /* Kelompokkan per tanggal */
+  const grouped = {};
   data.forEach(d => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-top">
-        <div class="card-register">
-          <small>Nomor Register</small>
-          ${d.register}
-        </div>
-        ${agendaBadge(d.agenda)}
+    const key = d.tanggal || 'Tanpa Tanggal';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(d);
+  });
+
+  Object.entries(grouped).forEach(([tgl, items]) => {
+    const today = isToday(tgl);
+
+    /* Divider tanggal */
+    const divider = document.createElement('div');
+    divider.className = 'date-divider' + (today ? ' date-divider-today' : '');
+    divider.innerHTML = `
+      <div class="date-divider-line"></div>
+      <div class="date-divider-label">
+        ${today ? '<span class="today-dot"></span>' : ''}
+        <span class="date-divider-text">${formatTanggalRingkas(tgl)}</span>
+        ${today ? '<span class="today-chip">Hari Ini</span>' : ''}
       </div>
-      <div class="card-body">
-        <div class="card-row">
-          <span class="card-label">Pemohon</span>
-          <span class="card-value">${d.pemohon || '-'}</span>
+      <div class="date-divider-line"></div>`;
+    grid.appendChild(divider);
+
+    /* Kartu-kartu untuk tanggal ini */
+    items.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'card' + (today ? ' card-today' : '');
+      card.innerHTML = `
+        <div class="card-datetime-banner">
+          <div class="card-datetime-left">
+            <span class="card-date-icon">📅</span>
+            <span class="card-date-text">${formatTanggalRingkas(d.tanggal)}</span>
+          </div>
+          <div class="card-time-right">
+            <span class="card-time-icon">🕐</span>
+            <span class="card-time-text">${d.jam || '-'}</span>
+          </div>
         </div>
-        <div class="card-row">
-          <span class="card-label">Termohon</span>
-          <span class="card-value">${d.termohon || '-'}</span>
+        <div class="card-top">
+          <div class="card-register">
+            <small>Nomor Register</small>
+            ${d.register}
+          </div>
+          <div class="card-badges">
+            ${agendaBadge(d.agenda)}
+            ${statusBadge(d.status)}
+          </div>
         </div>
-      </div>
-      <div class="card-footer">
-        <div class="card-datetime">
-          📅 ${namaHariSingkat(d.tanggal) || d.tanggal}
-          <span>·</span> 🕐 ${d.jam || '-'}
+        <div class="card-body">
+          <div class="card-row">
+            <span class="card-label">Pemohon</span>
+            <span class="card-value">${d.pemohon || '-'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Termohon</span>
+            <span class="card-value">${d.termohon || '-'}</span>
+          </div>
         </div>
-      </div>`;
-    card.onclick = () => openModal(d);
-    grid.appendChild(card);
+        <div class="card-footer">
+          <span class="card-cta">Lihat Detail →</span>
+        </div>`;
+      card.onclick = () => openModal(d);
+      grid.appendChild(card);
+    });
   });
 }
 
@@ -1044,17 +1292,52 @@ function setFilter(val, btn) {
   filterCards();
 }
 
-function filterCards() {
-  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+function togglePast() {
+  showPast = !showPast;
+  const btn = document.getElementById('togglePastBtn');
+  if (btn) btn.textContent = showPast ? '⬆ Sembunyikan yang sudah lewat' : '🕘 Tampilkan yang sudah lewat';
+  filterCards();
+}
 
-  const filtered = sidangData.filter(d => {
-    const matchSearch = !q || [d.register, d.pemohon, d.termohon, d.majelis, d.mediator, d.panitera, d.agenda]
+function filterCards() {
+  const q    = document.getElementById('searchInput').value.toLowerCase().trim();
+  const today = todayDate();
+
+  let filtered = sidangData.filter(d => {
+    /* Filter tanggal: sembunyikan yang sudah lewat kecuali showPast aktif atau ada pencarian */
+    if (!showPast && !q) {
+      const tgl = parseTanggal(d.tanggal);
+      if (tgl && tgl < today) return false;
+    }
+    /* Filter pencarian */
+    const matchSearch = !q || [d.register, d.pemohon, d.termohon, d.majelis, d.mediator, d.panitera, d.agenda, d.status]
       .some(v => (v || '').toLowerCase().includes(q));
+    /* Filter tab agenda */
     const matchFilter = activeFilter === 'all' || (d.agenda || '').toLowerCase().includes(activeFilter.toLowerCase());
     return matchSearch && matchFilter;
   });
 
+  /* Urutkan dari tanggal terlama ke terbaru */
+  filtered.sort((a, b) => {
+    const da = parseTanggal(a.tanggal);
+    const db = parseTanggal(b.tanggal);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da - db;
+  });
+
+  const totalSemua = sidangData.length;
+  const totalLewat = sidangData.filter(d => { const t = parseTanggal(d.tanggal); return t && t < today; }).length;
   document.getElementById('statsLabel').textContent = `${filtered.length} Jadwal Sidang`;
+
+  /* Update tombol toggle */
+  const btn = document.getElementById('togglePastBtn');
+  if (btn) {
+    btn.textContent = showPast ? '⬆ Sembunyikan yang sudah lewat' : `🕘 Tampilkan ${totalLewat} jadwal yang sudah lewat`;
+    btn.style.display = totalLewat > 0 ? 'inline-block' : 'none';
+  }
+
   renderCards(filtered);
 }
 
@@ -1076,6 +1359,10 @@ function openModal(d) {
   /* Isi mediator jika elemen ada di HTML */
   const elMed = document.getElementById('m-mediator');
   if (elMed) elMed.textContent = d.mediator || '-';
+
+  /* Isi status perkara */
+  const elStatus = document.getElementById('m-status');
+  if (elStatus) elStatus.textContent = d.status || '-';
 
   document.getElementById('modalOverlay').classList.add('open');
 }
