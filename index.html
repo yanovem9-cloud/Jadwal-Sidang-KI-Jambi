@@ -1242,11 +1242,20 @@ function formatTanggalRingkas(str) {
 /* ── Format nama (pisah per "/" atau "," jadi list) ── */
 function formatNamaList(str) {
   if (!str || str === '-') return '<span>-</span>';
-  /* Pisahkan berdasarkan / atau , atau ; atau newline */
-  const names = str.split(/[\/,;
-]+/).map(s => s.trim()).filter(Boolean);
-  if (names.length <= 1) return `<span>${str}</span>`;
-  return '<div class="name-list">' + names.map(n => `<span class="name-list-item">${n}</span>`).join('') + '</div>';
+  var parts = [];
+  var current = '';
+  for (var i = 0; i < str.length; i++) {
+    var ch = str[i];
+    if (ch === '/' || ch === ',' || ch === ';' || ch === '\n') {
+      if (current.trim()) parts.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) parts.push(current.trim());
+  if (parts.length <= 1) return '<span>' + str + '</span>';
+  return '<div class="name-list">' + parts.map(function(n){ return '<span class="name-list-item">' + n + '</span>'; }).join('') + '</div>';
 }
 
 /* ── Badge agenda ── */
