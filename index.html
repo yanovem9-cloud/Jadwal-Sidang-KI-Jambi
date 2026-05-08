@@ -480,6 +480,19 @@
     letter-spacing: 0.03em;
   }
 
+  /* ── Jam saja (dalam date group, tanggal ada di header) ── */
+  .card-time-only-banner {
+    background: var(--surface-alt, #f0f4f2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
   /* ── CARD BADGES ── */
   .card-badges {
     display: flex;
@@ -511,16 +524,100 @@
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     font-weight: 500;
-    padding: 8px 16px;
+    padding: 8px 20px;
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.2s;
+    display: inline-block;
   }
 
   .toggle-past-btn:hover {
     border-color: var(--accent-mid);
     color: var(--accent);
     background: var(--accent-light);
+  }
+
+  .past-section-header {
+    text-align: center;
+    padding: 8px 0;
+    border-top: 1.5px dashed var(--border);
+  }
+
+  /* ── DATE GROUP BOX ── */
+  .date-group {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .date-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .date-group-today .date-group-header {
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-mid) 100%);
+  }
+
+  .date-group-date {
+    font-size: 15px;
+    font-weight: 700;
+    flex: 1;
+    letter-spacing: 0.01em;
+  }
+
+  .date-group-count {
+    font-size: 12px;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .date-group-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .date-group-cards .card {
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+  }
+
+  .date-group-cards .card:last-child {
+    border-bottom: none;
+  }
+
+  .date-group-cards .card-datetime-banner {
+    display: none; /* Tanggal sudah ada di header group */
+  }
+
+  /* ── NAME LIST (Majelis tampil per baris) ── */
+  .name-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .name-list-item {
+    font-size: 13px;
+    color: var(--text-primary);
+    padding: 1px 0;
+  }
+
+  .name-list-item::before {
+    content: "• ";
+    color: var(--accent-mid);
   }
 
   /* ── CARD TODAY highlight ── */
@@ -854,13 +951,16 @@
     <button class="tab-btn" onclick="setFilter('Putusan', this)">Putusan</button>
   </div>
 
-  <!-- TOGGLE PAST -->
-  <div style="margin-bottom:20px;">
-    <button id="togglePastBtn" onclick="togglePast()" class="toggle-past-btn" style="display:none">🕘 Tampilkan jadwal yang sudah lewat</button>
-  </div>
-
   <!-- CARD GRID -->
   <div class="card-grid" id="cardGrid"></div>
+
+  <!-- TOGGLE PAST (di bawah jadwal aktif, di atas kontak) -->
+  <div id="pastSection" style="display:none;margin:32px 0 8px;">
+    <div class="past-section-header">
+      <button id="togglePastBtn" onclick="togglePast()" class="toggle-past-btn">🕘 Tampilkan Jadwal yang Sudah Lewat</button>
+    </div>
+    <div id="pastGrid" style="margin-top:16px;display:none;"></div>
+  </div>
 
   <!-- CONTACT -->
   <div class="contact-section">
@@ -1134,6 +1234,16 @@ function formatTanggalRingkas(str) {
   return str;
 }
 
+/* ── Format nama (pisah per "/" atau "," jadi list) ── */
+function formatNamaList(str) {
+  if (!str || str === '-') return '<span>-</span>';
+  /* Pisahkan berdasarkan / atau , atau ; atau newline */
+  const names = str.split(/[\/,;
+]+/).map(s => s.trim()).filter(Boolean);
+  if (names.length <= 1) return `<span>${str}</span>`;
+  return '<div class="name-list">' + names.map(n => `<span class="name-list-item">${n}</span>`).join('') + '</div>';
+}
+
 /* ── Badge agenda ── */
 function agendaBadge(agenda) {
   const a = (agenda || '').toLowerCase();
@@ -1165,12 +1275,119 @@ function isToday(str) {
   return d.getTime() === t.getTime();
 }
 
-/* ── Render card grid ── */
-function renderCards(data) {
-  const grid = document.getElementById('cardGrid');
-  grid.innerHTML = '';
+/* ── Buat kartu sidang ── */
+function buildCard(d, showDate) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    ${showDate ? `
+    <div class="card-datetime-banner">
+      <div class="card-datetime-left">
+        <span class="card-date-icon">📅</span>
+        <span class="card-date-text">${formatTanggalRingkas(d.tanggal)}</span>
+      </div>
+      <div class="card-time-right">
+        <span class="card-time-icon">🕐</span>
+        <span class="card-time-text">${d.jam || '-'}</span>
+      </div>
+    </div>` : `
+    <div class="card-time-only-banner">
+      <span class="card-time-icon">🕐</span>
+      <span class="card-time-text">${d.jam || '-'}</span>
+    </div>`}
+    <div class="card-top">
+      <div class="card-register">
+        <small>Nomor Register</small>
+        ${d.register}
+      </div>
+      <div class="card-badges">
+        ${agendaBadge(d.agenda)}
+        ${statusBadge(d.status)}
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="card-row">
+        <span class="card-label">Pemohon</span>
+        <span class="card-value">${d.pemohon || '-'}</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Termohon</span>
+        <span class="card-value">${d.termohon || '-'}</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Majelis</span>
+        <span class="card-value">${formatNamaList(d.majelis)}</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Mediator</span>
+        <span class="card-value">${d.mediator || '-'}</span>
+      </div>
+      <div class="card-row">
+        <span class="card-label">Panitera</span>
+        <span class="card-value">${d.panitera || '-'}</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="card-cta">Lihat Detail →</span>
+    </div>`;
+  card.onclick = () => openModal(d);
+  return card;
+}
 
-  if (data.length === 0) {
+/* ── Render grup tanggal ke dalam container ── */
+function renderGrouped(data, container, descending) {
+  container.innerHTML = '';
+
+  /* Kelompokkan per tanggal */
+  const grouped = {};
+  const keyOrder = [];
+  data.forEach(d => {
+    const key = d.tanggal || 'Tanpa Tanggal';
+    if (!grouped[key]) { grouped[key] = []; keyOrder.push(key); }
+    grouped[key].push(d);
+  });
+
+  /* Urutkan tanggal: descending (terbaru dulu) */
+  keyOrder.sort((a, b) => {
+    const da = parseTanggal(a), db = parseTanggal(b);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return descending ? db - da : da - db;
+  });
+
+  keyOrder.forEach(tgl => {
+    const items   = grouped[tgl];
+    const today   = isToday(tgl);
+
+    /* Kotak group per tanggal */
+    const group   = document.createElement('div');
+    group.className = 'date-group' + (today ? ' date-group-today' : '');
+
+    group.innerHTML = `
+      <div class="date-group-header">
+        ${today ? '<span class="today-dot" style="margin-right:4px"></span>' : ''}
+        <span class="date-group-date">${formatTanggalRingkas(tgl)}</span>
+        ${today ? '<span class="today-chip">Hari Ini</span>' : ''}
+        <span class="date-group-count">${items.length} Sidang</span>
+      </div>
+      <div class="date-group-cards"></div>`;
+
+    const cardsWrap = group.querySelector('.date-group-cards');
+    items.forEach(d => cardsWrap.appendChild(buildCard(d, false)));
+
+    container.appendChild(group);
+  });
+}
+
+/* ── Render card grid utama ── */
+function renderCards(upcoming, past) {
+  const grid     = document.getElementById('cardGrid');
+  const pastGrid = document.getElementById('pastGrid');
+  const pastSec  = document.getElementById('pastSection');
+
+  /* ── Jadwal mendatang ── */
+  if (upcoming.length === 0) {
     const q = document.getElementById('searchInput').value.trim();
     grid.innerHTML = `
       <div class="empty-state">
@@ -1178,77 +1395,23 @@ function renderCards(data) {
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
         <p>${q ? 'Tidak ada hasil untuk pencarian tersebut.' : 'Tidak ada jadwal sidang yang akan datang.'}</p>
-        ${!showPast && !q ? '<button onclick="togglePast()" style="margin-top:12px;padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Tampilkan semua termasuk yang sudah lewat</button>' : ''}
       </div>`;
-    return;
+  } else {
+    renderGrouped(upcoming, grid, false); /* ascending: terdekat dulu */
   }
 
-  /* Kelompokkan per tanggal */
-  const grouped = {};
-  data.forEach(d => {
-    const key = d.tanggal || 'Tanpa Tanggal';
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(d);
-  });
-
-  Object.entries(grouped).forEach(([tgl, items]) => {
-    const today = isToday(tgl);
-
-    /* Divider tanggal */
-    const divider = document.createElement('div');
-    divider.className = 'date-divider' + (today ? ' date-divider-today' : '');
-    divider.innerHTML = `
-      <div class="date-divider-line"></div>
-      <div class="date-divider-label">
-        ${today ? '<span class="today-dot"></span>' : ''}
-        <span class="date-divider-text">${formatTanggalRingkas(tgl)}</span>
-        ${today ? '<span class="today-chip">Hari Ini</span>' : ''}
-      </div>
-      <div class="date-divider-line"></div>`;
-    grid.appendChild(divider);
-
-    /* Kartu-kartu untuk tanggal ini */
-    items.forEach(d => {
-      const card = document.createElement('div');
-      card.className = 'card' + (today ? ' card-today' : '');
-      card.innerHTML = `
-        <div class="card-datetime-banner">
-          <div class="card-datetime-left">
-            <span class="card-date-icon">📅</span>
-            <span class="card-date-text">${formatTanggalRingkas(d.tanggal)}</span>
-          </div>
-          <div class="card-time-right">
-            <span class="card-time-icon">🕐</span>
-            <span class="card-time-text">${d.jam || '-'}</span>
-          </div>
-        </div>
-        <div class="card-top">
-          <div class="card-register">
-            <small>Nomor Register</small>
-            ${d.register}
-          </div>
-          <div class="card-badges">
-            ${agendaBadge(d.agenda)}
-            ${statusBadge(d.status)}
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="card-row">
-            <span class="card-label">Pemohon</span>
-            <span class="card-value">${d.pemohon || '-'}</span>
-          </div>
-          <div class="card-row">
-            <span class="card-label">Termohon</span>
-            <span class="card-value">${d.termohon || '-'}</span>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-cta">Lihat Detail →</span>
-        </div>`;
-      card.onclick = () => openModal(d);
-      grid.appendChild(card);
-    });
-  });
+  /* ── Jadwal sudah lewat ── */
+  if (past.length > 0) {
+    pastSec.style.display = 'block';
+    if (showPast) {
+      pastGrid.style.display = 'grid';
+      renderGrouped(past, pastGrid, true); /* descending: terbaru dulu */
+    } else {
+      pastGrid.style.display = 'none';
+    }
+  } else {
+    pastSec.style.display = 'none';
+  }
 }
 
 /* ── Loading state ── */
@@ -1295,56 +1458,54 @@ function setFilter(val, btn) {
 function togglePast() {
   showPast = !showPast;
   const btn = document.getElementById('togglePastBtn');
-  if (btn) btn.textContent = showPast ? '⬆ Sembunyikan yang sudah lewat' : '🕘 Tampilkan yang sudah lewat';
+  if (btn) btn.textContent = showPast ? '⬆ Sembunyikan Jadwal yang Sudah Lewat' : '🕘 Tampilkan Jadwal yang Sudah Lewat';
   filterCards();
 }
 
 function filterCards() {
-  const q    = document.getElementById('searchInput').value.toLowerCase().trim();
+  const q     = document.getElementById('searchInput').value.toLowerCase().trim();
   const today = todayDate();
 
-  let filtered = sidangData.filter(d => {
-    /* Filter tanggal: sembunyikan yang sudah lewat kecuali showPast aktif atau ada pencarian */
-    if (!showPast && !q) {
-      const tgl = parseTanggal(d.tanggal);
-      if (tgl && tgl < today) return false;
-    }
-    /* Filter pencarian */
+  /* Filter berdasarkan pencarian dan tab agenda */
+  const matchBase = d => {
     const matchSearch = !q || [d.register, d.pemohon, d.termohon, d.majelis, d.mediator, d.panitera, d.agenda, d.status]
       .some(v => (v || '').toLowerCase().includes(q));
-    /* Filter tab agenda */
     const matchFilter = activeFilter === 'all' || (d.agenda || '').toLowerCase().includes(activeFilter.toLowerCase());
     return matchSearch && matchFilter;
+  };
+
+  /* Pisahkan: mendatang (hari ini ke depan) vs sudah lewat */
+  const upcoming = sidangData.filter(d => {
+    const tgl = parseTanggal(d.tanggal);
+    const isFuture = !tgl || tgl >= today;
+    return isFuture && matchBase(d);
   });
 
-  /* Urutkan dari tanggal terlama ke terbaru */
-  filtered.sort((a, b) => {
-    const da = parseTanggal(a.tanggal);
-    const db = parseTanggal(b.tanggal);
-    if (!da && !db) return 0;
-    if (!da) return 1;
-    if (!db) return -1;
-    return da - db;
+  const past = sidangData.filter(d => {
+    const tgl = parseTanggal(d.tanggal);
+    const isPast = tgl && tgl < today;
+    return isPast && matchBase(d);
   });
 
-  const totalSemua = sidangData.length;
-  const totalLewat = sidangData.filter(d => { const t = parseTanggal(d.tanggal); return t && t < today; }).length;
-  document.getElementById('statsLabel').textContent = `${filtered.length} Jadwal Sidang`;
+  /* Update stats */
+  const totalTampil = upcoming.length + (showPast ? past.length : 0);
+  document.getElementById('statsLabel').textContent = `${upcoming.length} Jadwal Mendatang`;
 
-  /* Update tombol toggle */
+  /* Update label tombol toggle */
   const btn = document.getElementById('togglePastBtn');
   if (btn) {
-    btn.textContent = showPast ? '⬆ Sembunyikan yang sudah lewat' : `🕘 Tampilkan ${totalLewat} jadwal yang sudah lewat`;
-    btn.style.display = totalLewat > 0 ? 'inline-block' : 'none';
+    btn.textContent = showPast
+      ? '⬆ Sembunyikan Jadwal yang Sudah Lewat'
+      : `🕘 Tampilkan ${past.length} Jadwal yang Sudah Lewat`;
   }
 
-  renderCards(filtered);
+  renderCards(upcoming, past);
 }
 
 /* ════════════════════════════════════════════════════════
    MODAL DETAIL
    ════════════════════════════════════════════════════════ */
-function openModal(d) {
+function _fillModal(d) {
   document.getElementById('m-register').textContent      = d.register;
   document.getElementById('m-agenda-header').textContent = `Agenda: ${d.agenda || '-'}`;
   document.getElementById('m-tanggal').textContent       = formatTanggal(d.tanggal) || d.tanggal || '-';
@@ -1352,19 +1513,19 @@ function openModal(d) {
   document.getElementById('m-agenda').textContent        = d.agenda   || '-';
   document.getElementById('m-pemohon').textContent       = d.pemohon  || '-';
   document.getElementById('m-termohon').textContent      = d.termohon || '-';
-  document.getElementById('m-majelis').textContent       = d.majelis  || '-';
+
+  /* Majelis: tampilkan per baris */
+  const elMajelis = document.getElementById('m-majelis');
+  if (elMajelis) elMajelis.innerHTML = formatNamaList(d.majelis);
+
   document.getElementById('m-panitera').textContent      = d.panitera || '-';
   document.getElementById('m-catatan').textContent       = d.catatan  || '-';
 
-  /* Isi mediator jika elemen ada di HTML */
   const elMed = document.getElementById('m-mediator');
   if (elMed) elMed.textContent = d.mediator || '-';
 
-  /* Isi status perkara */
   const elStatus = document.getElementById('m-status');
   if (elStatus) elStatus.textContent = d.status || '-';
-
-  document.getElementById('modalOverlay').classList.add('open');
 }
 
 function closeModal(e) {
@@ -1377,6 +1538,21 @@ function closeModalDirect() {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModalDirect();
+});
+
+/* ── Handle tombol Back di HP: tutup modal dulu, jangan keluar situs ── */
+function openModal(d) {
+  /* Override openModal untuk tambah history entry */
+  _fillModal(d);
+  document.getElementById('modalOverlay').classList.add('open');
+  history.pushState({ modal: true }, '');
+}
+
+window.addEventListener('popstate', e => {
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay.classList.contains('open')) {
+    overlay.classList.remove('open');
+  }
 });
 
 /* ════════════════════════════════════════════════════════
