@@ -574,27 +574,40 @@
     .date-group-cards { grid-template-columns: repeat(2, 1fr); }
   }
 
-  /* ── DATE GROUP BOX ── */
+  /* ── ACCORDION DATE GROUP ── */
   .date-group {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
-    margin-bottom: 4px;
   }
 
   .date-group-header {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 20px;
+    padding: 14px 20px;
     background: var(--accent);
     color: #fff;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
   }
+
+  .date-group-header:hover { filter: brightness(1.1); }
 
   .date-group-today .date-group-header {
     background: linear-gradient(90deg, var(--accent) 0%, var(--accent-mid) 100%);
   }
+
+  .date-group-arrow {
+    font-size: 12px;
+    transition: transform 0.25s ease;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .date-group.open .date-group-arrow { transform: rotate(180deg); }
 
   .date-group-date {
     font-size: 15px;
@@ -609,9 +622,17 @@
     padding: 2px 10px;
     border-radius: 20px;
     font-weight: 600;
+    flex-shrink: 0;
   }
 
-  /* date-group-cards: lihat definisi grid di atas */
+  .date-group-body { display: none; overflow: hidden; }
+  .date-group.open .date-group-body { display: block; }
+
+  .date-group-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
 
   .date-group-cards .card {
     border-radius: 0;
@@ -621,22 +642,9 @@
     box-shadow: none;
   }
 
-  .date-group-cards .card:nth-child(even) {
-    border-right: none;
-  }
-
-  .date-group-cards .card:last-child,
-  .date-group-cards .card:nth-last-child(2):nth-child(odd) {
-    border-bottom: none;
-  }
-
-  .date-group-cards .card:last-child {
-    border-right: none;
-  }
-
-  .date-group-cards .card-datetime-banner {
-    display: none; /* Tanggal sudah ada di header group */
-  }
+  .date-group-cards .card:nth-child(3n) { border-right: none; }
+  .date-group-cards .card:last-child { border-right: none; border-bottom: none; }
+  .date-group-cards .card-datetime-banner { display: none; }
 
   /* ── NAME LIST (Majelis tampil per baris) ── */
   .name-list {
@@ -926,6 +934,8 @@
     main { padding: 24px 14px 48px; }
     .jadwal-container { gap: 12px; }
     .date-group-cards { grid-template-columns: 1fr; }
+    .date-group-header { padding: 12px 16px; }
+    .date-group-date { font-size: 14px; }
     .detail-grid { grid-template-columns: 1fr; }
     .modal-body { padding: 20px 18px; }
     .modal-header { padding: 20px 20px 16px; }
@@ -1379,7 +1389,7 @@ function buildCard(d, showDate) {
   return card;
 }
 
-/* ── Render grup tanggal ke dalam container ── */
+/* ── Render grup tanggal ke dalam container (accordion) ── */
 function renderGrouped(data, container, descending) {
   container.innerHTML = '';
 
@@ -1392,7 +1402,7 @@ function renderGrouped(data, container, descending) {
     grouped[key].push(d);
   });
 
-  /* Urutkan tanggal: descending (terbaru dulu) */
+  /* Urutkan tanggal */
   keyOrder.sort((a, b) => {
     const da = parseTanggal(a), db = parseTanggal(b);
     if (!da && !db) return 0;
@@ -1402,27 +1412,35 @@ function renderGrouped(data, container, descending) {
   });
 
   keyOrder.forEach(tgl => {
-    const items   = grouped[tgl];
-    const today   = isToday(tgl);
+    const items = grouped[tgl];
+    const today = isToday(tgl);
 
-    /* Kotak group per tanggal */
-    const group   = document.createElement('div');
-    group.className = 'date-group' + (today ? ' date-group-today' : '');
+    const group = document.createElement('div');
+    /* Auto-open kalau hari ini, sisanya tertutup */
+    group.className = 'date-group' + (today ? ' date-group-today open' : '');
 
     group.innerHTML = `
-      <div class="date-group-header">
+      <div class="date-group-header" onclick="toggleGroup(this.parentElement)">
         ${today ? '<span class="today-dot" style="margin-right:4px"></span>' : ''}
         <span class="date-group-date">${formatTanggalRingkas(tgl)}</span>
         ${today ? '<span class="today-chip">Hari Ini</span>' : ''}
         <span class="date-group-count">${items.length} Sidang</span>
+        <span class="date-group-arrow">▼</span>
       </div>
-      <div class="date-group-cards"></div>`;
+      <div class="date-group-body">
+        <div class="date-group-cards"></div>
+      </div>`;
 
     const cardsWrap = group.querySelector('.date-group-cards');
     items.forEach(d => cardsWrap.appendChild(buildCard(d, false)));
 
     container.appendChild(group);
   });
+}
+
+/* ── Toggle accordion ── */
+function toggleGroup(el) {
+  el.classList.toggle('open');
 }
 
 /* ── Render card grid utama ── */
