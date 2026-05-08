@@ -543,9 +543,15 @@
     border-top: 1.5px dashed var(--border);
   }
 
+  /* ── JADWAL CONTAINER ── */
+  .jadwal-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
   /* ── DATE GROUP BOX ── */
   .date-group {
-    grid-column: 1 / -1;
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
@@ -631,7 +637,6 @@
     text-align: center;
     padding: 60px 20px;
     color: var(--text-muted);
-    grid-column: 1 / -1;
   }
 
   .empty-state svg { margin-bottom: 16px; opacity: 0.4; }
@@ -889,7 +894,7 @@
     .divider-line { height: 40px; }
     .nav-bar-inner { padding: 0 16px; }
     main { padding: 24px 14px 48px; }
-    .card-grid { grid-template-columns: 1fr; }
+    .jadwal-container { gap: 12px; }
     .detail-grid { grid-template-columns: 1fr; }
     .modal-body { padding: 20px 18px; }
     .modal-header { padding: 20px 20px 16px; }
@@ -952,14 +957,14 @@
   </div>
 
   <!-- CARD GRID -->
-  <div class="card-grid" id="cardGrid"></div>
+  <div id="cardGrid" class="jadwal-container"></div>
 
   <!-- TOGGLE PAST (di bawah jadwal aktif, di atas kontak) -->
   <div id="pastSection" style="display:none;margin:32px 0 8px;">
     <div class="past-section-header">
       <button id="togglePastBtn" onclick="togglePast()" class="toggle-past-btn">🕘 Tampilkan Jadwal yang Sudah Lewat</button>
     </div>
-    <div id="pastGrid" style="margin-top:16px;display:none;"></div>
+    <div id="pastGrid" class="jadwal-container" style="margin-top:16px;display:none;"></div>
   </div>
 
   <!-- CONTACT -->
@@ -1404,7 +1409,7 @@ function renderCards(upcoming, past) {
   if (past.length > 0) {
     pastSec.style.display = 'block';
     if (showPast) {
-      pastGrid.style.display = 'grid';
+      pastGrid.style.display = 'flex';
       renderGrouped(past, pastGrid, true); /* descending: terbaru dulu */
     } else {
       pastGrid.style.display = 'none';
