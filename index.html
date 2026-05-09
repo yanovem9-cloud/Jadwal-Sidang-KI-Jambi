@@ -926,82 +926,11 @@
   footer strong { color: #fff; }
 
   /* ── STATS SUMMARY CARDS ── */
-  .stats-cards-top {
+  .stats-cards {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  /* ── SIDANG HARI INI BANNER ── */
-  .stat-today-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-mid) 100%);
-    border: 2px solid var(--accent-mid);
-    border-radius: var(--radius);
-    padding: 18px 28px;
     margin-bottom: 28px;
-    box-shadow: 0 4px 20px rgba(26,61,43,0.18);
-    gap: 16px;
-  }
-
-  .stat-today-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .stat-today-pulse {
-    width: 12px;
-    height: 12px;
-    background: #fff;
-    border-radius: 50%;
-    display: inline-block;
-    animation: pulse 1.5s infinite;
-    flex-shrink: 0;
-  }
-
-  .stat-today-title {
-    font-family: 'Lora', serif;
-    font-size: clamp(14px, 2.5vw, 18px);
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .stat-today-count {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-
-  .stat-today-num {
-    font-family: 'Lora', serif;
-    font-size: clamp(28px, 5vw, 40px);
-    font-weight: 700;
-    color: #fff;
-    line-height: 1;
-  }
-
-  .stat-today-desc {
-    font-size: 14px;
-    color: rgba(255,255,255,0.8);
-    font-weight: 500;
-  }
-
-  /* State: tidak ada sidang */
-  .stat-today-banner.no-sidang {
-    background: linear-gradient(135deg, #5a5a5a 0%, #787878 100%);
-    border-color: #9a9a9a;
-    opacity: 0.75;
-  }
-
-  .stat-today-banner.no-sidang .stat-today-pulse {
-    animation: none;
-    opacity: 0.5;
   }
 
   .stat-card {
@@ -1513,10 +1442,8 @@
     .detail-grid { grid-template-columns: 1fr; }
     .contact-section { padding: 20px 16px; }
 
-    /* Stats: 3 kolom di mobile (lebih compact) */
-    .stats-cards-top { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
-    .stat-today-banner { flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px 18px; }
-    .stat-today-count { align-self: flex-end; }
+    /* Stats: 2x2 grid di mobile */
+    .stats-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
     .stat-value { font-size: 24px; }
 
     /* Page tabs */
@@ -1565,7 +1492,7 @@
   }
 
   @media (max-width: 900px) {
-    .stats-cards-top { grid-template-columns: repeat(3, 1fr); }
+    .stats-cards { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -1606,11 +1533,16 @@
 <main>
 
   <!-- STATS SUMMARY CARDS -->
-  <div class="stats-cards-top" id="statsCards">
+  <div class="stats-cards" id="statsCards">
     <div class="stat-card stat-total clickable" onclick="openStatsModal('total')">
       <div class="stat-icon">📋</div>
       <div class="stat-value" id="statTotalPerkara">–</div>
       <div class="stat-label">Total Perkara</div>
+    </div>
+    <div class="stat-card stat-today">
+      <div class="stat-icon">📅</div>
+      <div class="stat-value" id="statHariIni">–</div>
+      <div class="stat-label">Sidang Hari Ini</div>
     </div>
     <div class="stat-card stat-active clickable" onclick="openStatsModal('aktif')">
       <div class="stat-icon">⚖️</div>
@@ -1621,18 +1553,6 @@
       <div class="stat-icon">✅</div>
       <div class="stat-value" id="statPutusan">–</div>
       <div class="stat-label">Sudah Putusan</div>
-    </div>
-  </div>
-
-  <!-- SIDANG HARI INI — HIGHLIGHT FULL WIDTH -->
-  <div class="stat-today-banner" id="statTodayBanner">
-    <div class="stat-today-left">
-      <span class="stat-today-pulse"></span>
-      <span class="stat-today-title">📅 SIDANG HARI INI</span>
-    </div>
-    <div class="stat-today-count" id="statTodayCount">
-      <span class="stat-today-num" id="statHariIni">–</span>
-      <span class="stat-today-desc" id="statTodayDesc">sidang dijadwalkan</span>
     </div>
   </div>
 
@@ -2323,8 +2243,15 @@ function openModal(d) {
 }
 
 window.addEventListener('popstate', e => {
+  /* Nutup stats modal kalau lagi buka */
+  const statsOverlay = document.getElementById('statsModalOverlay');
+  if (statsOverlay && statsOverlay.classList.contains('open')) {
+    statsOverlay.classList.remove('open');
+    return;
+  }
+  /* Nutup detail modal (riwayat perkara) */
   const overlay = document.getElementById('modalOverlay');
-  if (overlay.classList.contains('open')) {
+  if (overlay && overlay.classList.contains('open')) {
     overlay.classList.remove('open');
   }
 });
@@ -2360,23 +2287,9 @@ function updateStats() {
   const aktifCount = [...perkaraAktif].filter(r => !perkaraDone.has(r)).length;
 
   document.getElementById('statTotalPerkara').textContent = uniqueRegisters.length;
+  document.getElementById('statHariIni').textContent      = todayCount;
   document.getElementById('statAktif').textContent        = aktifCount;
   document.getElementById('statPutusan').textContent      = perkaraDone.size;
-
-  /* Banner Sidang Hari Ini */
-  const banner = document.getElementById('statTodayBanner');
-  const descEl = document.getElementById('statTodayDesc');
-  if (todayCount === 0) {
-    document.getElementById('statHariIni').textContent = '';
-    descEl.textContent = 'TIDAK ADA SIDANG HARI INI';
-    banner.classList.add('no-sidang');
-    document.querySelector('.stat-today-pulse').style.display = 'none';
-  } else {
-    document.getElementById('statHariIni').textContent = todayCount;
-    descEl.textContent = todayCount === 1 ? 'sidang dijadwalkan' : 'sidang dijadwalkan';
-    banner.classList.remove('no-sidang');
-    document.querySelector('.stat-today-pulse').style.display = 'inline-block';
-  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -2441,6 +2354,7 @@ function openStatsModal(type) {
   }
 
   document.getElementById('statsModalOverlay').classList.add('open');
+  history.pushState({ modal: 'stats' }, '');
 }
 
 function bukaRiwayatDariStats(register) {
