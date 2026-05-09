@@ -324,10 +324,10 @@
     flex-shrink: 0;
   }
 
-  .badge-pemeriksaan { background: #e8f0fe; color: #2563eb; }
-  .badge-mediasi     { background: #fef3c7; color: #d97706; }
-  .badge-putusan     { background: #fce7f3; color: #db2777; }
-  .badge-lanjutan    { background: #f0fdf4; color: #16a34a; }
+  .badge-pemeriksaan { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }  /* 🟠 Orange */
+  .badge-mediasi     { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }  /* 🔵 Biru */
+  .badge-putusan     { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }  /* 🟢 Hijau */
+  .badge-lanjutan    { background: #fffde7; color: #f57f17; border: 1px solid #ffe082; }  /* 🟡 Kuning */
 
   .card-body { padding: 8px 14px 10px; }
 
@@ -926,11 +926,82 @@
   footer strong { color: #fff; }
 
   /* ── STATS SUMMARY CARDS ── */
-  .stats-cards {
+  .stats-cards-top {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* ── SIDANG HARI INI BANNER ── */
+  .stat-today-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-mid) 100%);
+    border: 2px solid var(--accent-mid);
+    border-radius: var(--radius);
+    padding: 18px 28px;
     margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(26,61,43,0.18);
+    gap: 16px;
+  }
+
+  .stat-today-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stat-today-pulse {
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 1.5s infinite;
+    flex-shrink: 0;
+  }
+
+  .stat-today-title {
+    font-family: 'Lora', serif;
+    font-size: clamp(14px, 2.5vw, 18px);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .stat-today-count {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .stat-today-num {
+    font-family: 'Lora', serif;
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .stat-today-desc {
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+  }
+
+  /* State: tidak ada sidang */
+  .stat-today-banner.no-sidang {
+    background: linear-gradient(135deg, #5a5a5a 0%, #787878 100%);
+    border-color: #9a9a9a;
+    opacity: 0.75;
+  }
+
+  .stat-today-banner.no-sidang .stat-today-pulse {
+    animation: none;
+    opacity: 0.5;
   }
 
   .stat-card {
@@ -946,6 +1017,137 @@
   }
 
   .stat-card:hover { box-shadow: var(--shadow-md); border-color: var(--accent-mid); }
+  .stat-card.clickable { cursor: pointer; }
+  .stat-card.clickable:active { transform: scale(0.97); }
+
+  /* ── STATS MODAL (list perkara) ── */
+  .stats-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .stats-modal-overlay.open { display: flex; }
+
+  .stats-modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 580px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+    animation: fadeUp 0.25s ease both;
+  }
+
+  .stats-modal-header {
+    background: var(--accent);
+    color: #fff;
+    padding: 18px 20px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .stats-modal-header h3 {
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .stats-modal-header p {
+    font-size: 12px;
+    opacity: 0.75;
+    margin-top: 2px;
+  }
+
+  .stats-modal-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stats-modal-body {
+    overflow-y: auto;
+    padding: 12px 16px 20px;
+    flex: 1;
+  }
+
+  .stats-perkara-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface);
+    min-height: 56px;
+  }
+
+  .stats-perkara-item:hover {
+    border-color: var(--accent-mid);
+    background: var(--accent-light);
+  }
+
+  .stats-perkara-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    min-width: 20px;
+  }
+
+  .stats-perkara-info { flex: 1; min-width: 0; }
+
+  .stats-perkara-register {
+    font-family: 'Lora', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stats-perkara-para {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  .stats-perkara-arrow {
+    color: var(--accent-mid);
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 640px) {
+    .stats-modal-overlay { padding: 0; align-items: flex-end; }
+    .stats-modal { border-radius: 20px 20px 0 0; max-height: 85vh; }
+    .stats-modal-header { border-radius: 20px 20px 0 0; }
+  }
 
   .stat-icon { font-size: 20px; margin-bottom: 4px; }
 
@@ -1311,8 +1513,10 @@
     .detail-grid { grid-template-columns: 1fr; }
     .contact-section { padding: 20px 16px; }
 
-    /* Stats: 2x2 grid di mobile */
-    .stats-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    /* Stats: 3 kolom di mobile (lebih compact) */
+    .stats-cards-top { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+    .stat-today-banner { flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px 18px; }
+    .stat-today-count { align-self: flex-end; }
     .stat-value { font-size: 24px; }
 
     /* Page tabs */
@@ -1361,7 +1565,7 @@
   }
 
   @media (max-width: 900px) {
-    .stats-cards { grid-template-columns: repeat(2, 1fr); }
+    .stats-cards-top { grid-template-columns: repeat(3, 1fr); }
   }
 </style>
 </head>
@@ -1402,26 +1606,33 @@
 <main>
 
   <!-- STATS SUMMARY CARDS -->
-  <div class="stats-cards" id="statsCards">
-    <div class="stat-card stat-total">
+  <div class="stats-cards-top" id="statsCards">
+    <div class="stat-card stat-total clickable" onclick="openStatsModal('total')">
       <div class="stat-icon">📋</div>
       <div class="stat-value" id="statTotalPerkara">–</div>
       <div class="stat-label">Total Perkara</div>
     </div>
-    <div class="stat-card stat-today">
-      <div class="stat-icon">📅</div>
-      <div class="stat-value" id="statHariIni">–</div>
-      <div class="stat-label">Sidang Hari Ini</div>
-    </div>
-    <div class="stat-card stat-active">
+    <div class="stat-card stat-active clickable" onclick="openStatsModal('aktif')">
       <div class="stat-icon">⚖️</div>
       <div class="stat-value" id="statAktif">–</div>
       <div class="stat-label">Perkara Aktif</div>
     </div>
-    <div class="stat-card stat-done">
+    <div class="stat-card stat-done clickable" onclick="openStatsModal('selesai')">
       <div class="stat-icon">✅</div>
       <div class="stat-value" id="statPutusan">–</div>
       <div class="stat-label">Sudah Putusan</div>
+    </div>
+  </div>
+
+  <!-- SIDANG HARI INI — HIGHLIGHT FULL WIDTH -->
+  <div class="stat-today-banner" id="statTodayBanner">
+    <div class="stat-today-left">
+      <span class="stat-today-pulse"></span>
+      <span class="stat-today-title">📅 SIDANG HARI INI</span>
+    </div>
+    <div class="stat-today-count" id="statTodayCount">
+      <span class="stat-today-num" id="statHariIni">–</span>
+      <span class="stat-today-desc" id="statTodayDesc">sidang dijadwalkan</span>
     </div>
   </div>
 
@@ -1514,6 +1725,20 @@
   </div>
 
 </main>
+
+<!-- STATS MODAL -->
+<div class="stats-modal-overlay" id="statsModalOverlay" onclick="closeStatsModal(event)">
+  <div class="stats-modal" id="statsModal">
+    <div class="stats-modal-header">
+      <div>
+        <h3 id="statsModalTitle">Daftar Perkara</h3>
+        <p id="statsModalSubtitle"></p>
+      </div>
+      <button class="stats-modal-close" onclick="closeStatsModalDirect()">×</button>
+    </div>
+    <div class="stats-modal-body" id="statsModalBody"></div>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
@@ -1790,7 +2015,8 @@ function agendaBadge(agenda) {
   if (a.includes('pemeriksaan')) return `<span class="agenda-badge badge-pemeriksaan">${agenda}</span>`;
   if (a.includes('mediasi'))     return `<span class="agenda-badge badge-mediasi">${agenda}</span>`;
   if (a.includes('putusan'))     return `<span class="agenda-badge badge-putusan">${agenda}</span>`;
-  if (a.includes('ajudikasi'))   return `<span class="agenda-badge badge-lanjutan">${agenda}</span>`;
+  if (a.includes('lanjutan') || a.includes('ajudikasi') || a.includes('pembuktian'))
+                                 return `<span class="agenda-badge badge-lanjutan">${agenda}</span>`;
   return `<span class="agenda-badge badge-lanjutan">${agenda || 'Lainnya'}</span>`;
 }
 
@@ -2134,14 +2360,106 @@ function updateStats() {
   const aktifCount = [...perkaraAktif].filter(r => !perkaraDone.has(r)).length;
 
   document.getElementById('statTotalPerkara').textContent = uniqueRegisters.length;
-  document.getElementById('statHariIni').textContent      = todayCount;
   document.getElementById('statAktif').textContent        = aktifCount;
   document.getElementById('statPutusan').textContent      = perkaraDone.size;
+
+  /* Banner Sidang Hari Ini */
+  const banner = document.getElementById('statTodayBanner');
+  const descEl = document.getElementById('statTodayDesc');
+  if (todayCount === 0) {
+    document.getElementById('statHariIni').textContent = '';
+    descEl.textContent = 'TIDAK ADA SIDANG HARI INI';
+    banner.classList.add('no-sidang');
+    document.querySelector('.stat-today-pulse').style.display = 'none';
+  } else {
+    document.getElementById('statHariIni').textContent = todayCount;
+    descEl.textContent = todayCount === 1 ? 'sidang dijadwalkan' : 'sidang dijadwalkan';
+    banner.classList.remove('no-sidang');
+    document.querySelector('.stat-today-pulse').style.display = 'inline-block';
+  }
 }
 
 /* ════════════════════════════════════════════════════════
-   PAGE SWITCHING
+   STATS MODAL — klik stat card → list perkara
    ════════════════════════════════════════════════════════ */
+function openStatsModal(type) {
+  /* Kumpulkan data per register unik */
+  const registerMap = {};
+  sidangData.forEach(d => {
+    if (!d.register) return;
+    if (!registerMap[d.register]) {
+      registerMap[d.register] = { pemohon: d.pemohon, termohon: d.termohon, statuses: [], rows: 0 };
+    }
+    registerMap[d.register].rows++;
+    if (d.status) registerMap[d.register].statuses.push(d.status);
+  });
+
+  const perkaraDone  = new Set(Object.keys(registerMap).filter(r => registerMap[r].statuses.some(s => s.toLowerCase().includes('selesai') || s.toLowerCase().includes('putus'))));
+  const perkaraAktif = Object.keys(registerMap).filter(r => !perkaraDone.has(r));
+
+  let list = [];
+  let title = '';
+  let subtitle = '';
+
+  if (type === 'total') {
+    list = Object.keys(registerMap);
+    title = '📋 Semua Perkara';
+    subtitle = `${list.length} perkara terdaftar`;
+  } else if (type === 'aktif') {
+    list = perkaraAktif;
+    title = '⚖️ Perkara Aktif';
+    subtitle = `${list.length} perkara masih berjalan`;
+  } else if (type === 'selesai') {
+    list = [...perkaraDone];
+    title = '✅ Sudah Putusan';
+    subtitle = `${list.length} perkara sudah selesai`;
+  }
+
+  document.getElementById('statsModalTitle').textContent   = title;
+  document.getElementById('statsModalSubtitle').textContent = subtitle;
+
+  const body = document.getElementById('statsModalBody');
+  if (list.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted)">Tidak ada data</div>';
+  } else {
+    body.innerHTML = list.map((reg, i) => {
+      const info = registerMap[reg];
+      const statusText = perkaraDone.has(reg)
+        ? `<span style="color:#2e7d32;font-weight:700;font-size:11px">✓ Selesai</span>`
+        : `<span style="color:#e65100;font-weight:700;font-size:11px">● Aktif</span>`;
+      return `
+        <div class="stats-perkara-item" onclick="bukaRiwayatDariStats('${reg.replace(/'/g,"\\'")}')">
+          <span class="stats-perkara-num">${i+1}</span>
+          <div class="stats-perkara-info">
+            <div class="stats-perkara-register">${reg}</div>
+            <div class="stats-perkara-para">${info.pemohon || '-'} vs ${info.termohon || '-'}</div>
+          </div>
+          ${statusText}
+          <span class="stats-perkara-arrow">›</span>
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('statsModalOverlay').classList.add('open');
+}
+
+function bukaRiwayatDariStats(register) {
+  closeStatsModalDirect();
+  switchPage('riwayat');
+  document.getElementById('riwayatInput').value = register;
+  renderRiwayat(register);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeStatsModal(e) {
+  if (e.target === document.getElementById('statsModalOverlay')) closeStatsModalDirect();
+}
+
+function closeStatsModalDirect() {
+  document.getElementById('statsModalOverlay').classList.remove('open');
+}
+
+
 function switchPage(page) {
   document.getElementById('pageJadwal').classList.toggle('active', page === 'jadwal');
   document.getElementById('pageRiwayat').classList.toggle('active', page === 'riwayat');
