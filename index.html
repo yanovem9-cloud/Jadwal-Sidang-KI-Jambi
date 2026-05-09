@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jadwal Sidang – Komisi Informasi Provinsi Jambi</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a3d2b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KI Jambi">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -2243,15 +2252,8 @@ function openModal(d) {
 }
 
 window.addEventListener('popstate', e => {
-  /* Nutup stats modal kalau lagi buka */
-  const statsOverlay = document.getElementById('statsModalOverlay');
-  if (statsOverlay && statsOverlay.classList.contains('open')) {
-    statsOverlay.classList.remove('open');
-    return;
-  }
-  /* Nutup detail modal (riwayat perkara) */
   const overlay = document.getElementById('modalOverlay');
-  if (overlay && overlay.classList.contains('open')) {
+  if (overlay.classList.contains('open')) {
     overlay.classList.remove('open');
   }
 });
@@ -2354,7 +2356,6 @@ function openStatsModal(type) {
   }
 
   document.getElementById('statsModalOverlay').classList.add('open');
-  history.pushState({ modal: 'stats' }, '');
 }
 
 function bukaRiwayatDariStats(register) {
@@ -2549,6 +2550,15 @@ document.head.appendChild(styleEl);
 
 /* Jalankan saat halaman siap */
 initApp();
+
+/* ── PWA: Register Service Worker ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW error:', err));
+  });
+}
 </script>
 </body>
 </html>
